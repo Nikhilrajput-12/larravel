@@ -54,7 +54,7 @@ jobs:
            fi
 
            # Navigate into the Laravel project directory
-           cd $/var/www/html/laravel
+           cd /var/www/html/laravel
 
          
            echo "Setting correct ownership for project files..."
