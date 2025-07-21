@@ -24,7 +24,7 @@ jobs:
         env:
           LARAVEL_ENV: ${{secrets.LARRAVEL_ENV }}
         run: |
-          ssh -o StrictHostChecking=no -i ssh_key.pem ubuntu@3.110.136.243 << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i ssh_key.pem ubuntu@3.110.136.243 << 'EOF'
            set -e 
 
            cd /var/www/html/laravel
