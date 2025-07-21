@@ -46,9 +46,9 @@ jobs:
            # Clone the repository if it's not already cloned, otherwise pull latest changes
            if [ ! -d "$/var/www/html/laravel/.git" ]; then
               echo "Cloning Laravel project into $/var/www/html/laravel..."
-              git clone https://github.com/Nikhilrajput-12/larravel.git $/var/www/html/laravel
+              git clone https://github.com/Nikhilrajput-12/larravel.git /var/www/html/laravel
            else
-              echo "Repo already exists at $/var/www/html/laravel. Pulling latest changes..."
+              echo "Repo already exists at /var/www/html/laravel. Pulling latest changes..."
               cd $/var/www/html/laravel
               git pull origin main
            fi
@@ -58,7 +58,7 @@ jobs:
 
          
            echo "Setting correct ownership for project files..."
-           sudo chown -R ubuntu:ubuntu $/var/www/html/laravel
+           sudo chown -R ubuntu:ubuntu var/www/html/laravel
 
            echo "Writing .env from secret..."
          
