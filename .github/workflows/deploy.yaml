@@ -29,16 +29,28 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i ssh_key.pem ubuntu@3.110.136.243 << EOF
            set -e 
 
-           cd /var/www/html/laravel
+        
 
+           # Create base directory if it doesn't exist
+           sudo mkdir -p /var/www/html/laravel
+          
            echo "fixing ownership"
            sudo chown -R ubuntu:ubuntu .
 
-           echo "pull latest code"
-           git pull origin main
+            # Clone repo if not already cloned
+           if [ ! -d "/var/www/html/laravel/.git" ]; then
+              echo "Cloning Laravel project..."
+              git clone https://github.com/Nikhilrajput-12/larravel.git /var/www/html/laravel
+           else
+            echo "Repo already exists. Pulling latest changes..."
+            cd /var/www/html/laravel
+            git pull origin main
+           fi
 
-           echo "writing  .env from secret .."
-           cat > .env <<EOL
+            cd /var/www/html/laravel           
+
+            echo "writing  .env from secret .."
+            cat > .env <<EOL
           $LARRAVEL_ENV
           EOL 
 
