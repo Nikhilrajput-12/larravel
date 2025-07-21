@@ -24,9 +24,9 @@ jobs:
 
       - name: deploy to ec2
         env:
-          LARAVEL_ENV: ${{secrets.LARRAVEL_ENV }}
+          LARRAVEL_ENV: ${{secrets.LARRAVEL_ENV }}
         run: |
-          ssh -o StrictHostKeyChecking=no -i ssh_key.pem ubuntu@3.110.136.243 << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i ssh_key.pem ubuntu@3.110.136.243 << EOF
            set -e 
 
            cd /var/www/html/laravel
@@ -39,7 +39,7 @@ jobs:
 
            echo "writing  .env from secret .."
            cat > .env <<EOL
-          $LARAVEL_ENV
+          $LARRAVEL_ENV
           EOL 
 
             echo "generating laravel app_key"
