@@ -58,7 +58,7 @@ jobs:
 
          
            echo "Setting correct ownership for project files..."
-           sudo chown -R ubuntu:www-data $/var/www/html/laravel
+           sudo chown -R ubuntu:ubuntu $/var/www/html/laravel
 
            echo "Writing .env from secret..."
          
@@ -70,13 +70,10 @@ jobs:
            php artisan config:clear || true
           
            echo "Installing Composer dependencies..."
-           # --no-interaction: Do not ask any interactive questions.
-           # --prefer-dist: Download from dist instead of cloning.
-           # --optimize-autoloader: Optimize Composer's autoloader for production.
+          
            composer install --no-interaction --prefer-dist --optimize-autoloader
           
            echo "Running database migrations..."
-           # --force: Required in production to run migrations without confirmation.
            php artisan migrate --force
 
            echo "Optimizing Laravel for production..."
@@ -85,19 +82,15 @@ jobs:
            php artisan route:cache
            php artisan view:cache
 
-           # Set permissions for storage and bootstrap/cache directories.
-           # www-data needs write access to these directories for sessions, logs, cache, etc.
-           # 775 allows owner (ubuntu) and group (www-data) to read, write, execute, others to read/execute.
+         
            echo "Setting correct Laravel permissions for storage and bootstrap/cache..."
            sudo chmod -R 775 storage bootstrap/cache
            # Ensure the web server user (www-data) is the group owner for these critical directories
-           sudo chown -R ubuntu:www-data storage bootstrap/cache
+           sudo chown -R www-data:www-data storage bootstrap/cache
 
            echo "Clearing application cache (optional, but good after deployment)..."
            php artisan cache:clear
 
-           # Restart PHP-FPM and Nginx to apply changes and load new code/configuration.
-           # Adjust service names (e.g., php8.1-fpm, apache2) based on your server setup.
            echo "Restarting PHP-FPM and Nginx..."
            sudo systemctl restart php8.1-fpm || true # Adjust PHP version as needed (e.g., php7.4-fpm)
            sudo systemctl restart nginx || true # Adjust web server name as needed (e.g., apache2)
