@@ -19,7 +19,7 @@ jobs:
       - name: Set up SSH key
         run: |
           # Write the SSH private key from GitHub secrets to a file
-          echo "${{ secrets.LARAVEL_KEY }}" > ssh_key.pem
+          echo "${{ secrets.LARRAVEL_KEY }}" > ssh_key.pem
           # Set restrictive permissions for the private key
           chmod 400 ssh_key.pem
 
@@ -27,7 +27,7 @@ jobs:
         env:
           # Pass the LARAVEL_ENV secret as an environment variable
           # This secret should contain the complete content of your .env file
-          LARAVEL_ENV: ${{ secrets.LARAVEL_ENV }}
+          LARRAVEL_ENV: ${{ secrets.LARRAVEL_ENV }}
         run: |
           # SSH into the EC2 instance and execute deployment commands
           # -o StrictHostKeyChecking=no bypasses host key checking for initial connection
