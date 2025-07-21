@@ -26,7 +26,7 @@ jobs:
         env:
           LARRAVEL_ENV: ${{secrets.LARRAVEL_ENV }}
         run: |
-          ssh -o StrictHostKeyChecking=no -i ssh_key.pem ubuntu@3.110.136.243 << EOF
+          ssh -o StrictHostKeyChecking=no -i ssh_key.pem ubuntu@13.126.18.186   << EOF
            set -e 
 
         
@@ -63,6 +63,8 @@ jobs:
             echo "setting correct laravel permission"
             sudo chown -R www-data:www-data .
             sudo chmod -R 777 storage 
+
+            php artisan migrate
 
             echo "deploy complete"
           EOF
