@@ -36,42 +36,36 @@ jobs:
            # Exit immediately if a command exits with a non-zero status
            set -e 
 
-           # Define the absolute path to your Laravel project on the EC2 instance
-           PROJECT_PATH="/var/www/html/laravel"
+          
+           
 
-           # Create the base directory for the Laravel project if it doesn't exist
-           sudo mkdir -p $PROJECT_PATH
-           echo "Ensuring base directory exists: $PROJECT_PATH"
+          
+           sudo mkdir -p /var/www/html/laravel
+           echo "Ensuring base directory exists: /var/www/html/laravel"
           
            # Clone the repository if it's not already cloned, otherwise pull latest changes
-           if [ ! -d "$PROJECT_PATH/.git" ]; then
-              echo "Cloning Laravel project into $PROJECT_PATH..."
-              git clone https://github.com/Nikhilrajput-12/larravel.git $PROJECT_PATH
+           if [ ! -d "$/var/www/html/laravel/.git" ]; then
+              echo "Cloning Laravel project into $/var/www/html/laravel..."
+              git clone https://github.com/Nikhilrajput-12/larravel.git $/var/www/html/laravel
            else
-              echo "Repo already exists at $PROJECT_PATH. Pulling latest changes..."
-              cd $PROJECT_PATH
+              echo "Repo already exists at $/var/www/html/laravel. Pulling latest changes..."
+              cd $/var/www/html/laravel
               git pull origin main
            fi
 
            # Navigate into the Laravel project directory
-           cd $PROJECT_PATH
+           cd $/var/www/html/laravel
 
-           # Set ownership for the entire project directory to the ubuntu user and www-data group.
-           # This allows the ubuntu user (who performs SSH actions) to manage files,
-           # and the www-data group (web server user) to read them.
+         
            echo "Setting correct ownership for project files..."
-           sudo chown -R ubuntu:www-data $PROJECT_PATH
+           sudo chown -R ubuntu:www-data $/var/www/html/laravel
 
            echo "Writing .env from secret..."
-           # Overwrite the .env file with the content from the LARAVEL_ENV secret.
-           # Ensure this secret contains your full .env configuration, including APP_KEY.
+         
            cat > .env <<EOL
           ${LARAVEL_ENV}
           EOL 
 
-           # Clear the configuration cache. This is important before composer install
-           # or applying new .env changes, to ensure Laravel doesn't use stale config.
-           # '|| true' prevents the script from failing if the cache doesn't exist yet.
            echo "Clearing Laravel config cache..."
            php artisan config:clear || true
           
