@@ -9,61 +9,104 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     
-
     steps: 
-      - name: checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
         
-      - name : list
+      - name: List files (for debugging)
         run: ls -a
 
-      - name: set up SSH key
+      - name: Set up SSH key
         run: |
-          echo "${{ secrets.LARRAVEL_KEY }}" > ssh_key.pem
+          # Write the SSH private key from GitHub secrets to a file
+          echo "${{ secrets.LARAVEL_KEY }}" > ssh_key.pem
+          # Set restrictive permissions for the private key
           chmod 400 ssh_key.pem
 
-      - name: deploy to ec2
+      - name: Deploy to EC2
         env:
-          LARRAVEL_ENV: ${{secrets.LARRAVEL_ENV }}
+          # Pass the LARAVEL_ENV secret as an environment variable
+          # This secret should contain the complete content of your .env file
+          LARAVEL_ENV: ${{ secrets.LARAVEL_ENV }}
         run: |
+          # SSH into the EC2 instance and execute deployment commands
+          # -o StrictHostKeyChecking=no bypasses host key checking for initial connection
+          # -i ssh_key.pem specifies the private key for authentication
           ssh -o StrictHostKeyChecking=no -i ssh_key.pem ubuntu@3.110.136.243 << EOF
+           # Exit immediately if a command exits with a non-zero status
            set -e 
 
-        
+           # Define the absolute path to your Laravel project on the EC2 instance
+           PROJECT_PATH="/var/www/html/laravel"
 
-           # Create base directory if it doesn't exist
-           sudo mkdir -p /var/www/html/laravel
+           # Create the base directory for the Laravel project if it doesn't exist
+           sudo mkdir -p $PROJECT_PATH
+           echo "Ensuring base directory exists: $PROJECT_PATH"
           
-           echo "fixing ownership"
-           sudo chown -R ubuntu:ubuntu /var/www/html/laravel
-
-            # Clone repo if not already cloned
-           if [ ! -d "/var/www/html/laravel/.git" ]; then
-              echo "Cloning Laravel project..."
-              git clone https://github.com/Nikhilrajput-12/larravel.git /var/www/html/laravel
+           # Clone the repository if it's not already cloned, otherwise pull latest changes
+           if [ ! -d "$PROJECT_PATH/.git" ]; then
+              echo "Cloning Laravel project into $PROJECT_PATH..."
+              git clone https://github.com/Nikhilrajput-12/larravel.git $PROJECT_PATH
            else
-            echo "Repo already exists. Pulling latest changes..."
-            cd /var/www/html/laravel
-            git pull origin main
+              echo "Repo already exists at $PROJECT_PATH. Pulling latest changes..."
+              cd $PROJECT_PATH
+              git pull origin main
            fi
 
-            cd /var/www/html/laravel           
+           # Navigate into the Laravel project directory
+           cd $PROJECT_PATH
 
-            echo "writing  .env from secret .."
-            cat > .env <<EOL
-          $LARRAVEL_ENV
+           # Set ownership for the entire project directory to the ubuntu user and www-data group.
+           # This allows the ubuntu user (who performs SSH actions) to manage files,
+           # and the www-data group (web server user) to read them.
+           echo "Setting correct ownership for project files..."
+           sudo chown -R ubuntu:www-data $PROJECT_PATH
+
+           echo "Writing .env from secret..."
+           # Overwrite the .env file with the content from the LARAVEL_ENV secret.
+           # Ensure this secret contains your full .env configuration, including APP_KEY.
+           cat > .env <<EOL
+          ${LARAVEL_ENV}
           EOL 
 
-            echo "generating laravel app_key"
-            php artisan key:generate
+           # Clear the configuration cache. This is important before composer install
+           # or applying new .env changes, to ensure Laravel doesn't use stale config.
+           # '|| true' prevents the script from failing if the cache doesn't exist yet.
+           echo "Clearing Laravel config cache..."
+           php artisan config:clear || true
           
-            echo "installing dependencies"
-            composer install --no-interaction --prefer-dist --optimize-autoloader
+           echo "Installing Composer dependencies..."
+           # --no-interaction: Do not ask any interactive questions.
+           # --prefer-dist: Download from dist instead of cloning.
+           # --optimize-autoloader: Optimize Composer's autoloader for production.
+           composer install --no-interaction --prefer-dist --optimize-autoloader
           
-            echo "setting correct laravel permission"
-            sudo chown -R www-data:www-data .
-            sudo chmod -R 777 storage 
+           echo "Running database migrations..."
+           # --force: Required in production to run migrations without confirmation.
+           php artisan migrate --force
 
-            echo "deplo complete"
+           echo "Optimizing Laravel for production..."
+           # Cache configuration, routes, and views for performance.
+           php artisan config:cache
+           php artisan route:cache
+           php artisan view:cache
+
+           # Set permissions for storage and bootstrap/cache directories.
+           # www-data needs write access to these directories for sessions, logs, cache, etc.
+           # 775 allows owner (ubuntu) and group (www-data) to read, write, execute, others to read/execute.
+           echo "Setting correct Laravel permissions for storage and bootstrap/cache..."
+           sudo chmod -R 775 storage bootstrap/cache
+           # Ensure the web server user (www-data) is the group owner for these critical directories
+           sudo chown -R ubuntu:www-data storage bootstrap/cache
+
+           echo "Clearing application cache (optional, but good after deployment)..."
+           php artisan cache:clear
+
+           # Restart PHP-FPM and Nginx to apply changes and load new code/configuration.
+           # Adjust service names (e.g., php8.1-fpm, apache2) based on your server setup.
+           echo "Restarting PHP-FPM and Nginx..."
+           sudo systemctl restart php8.1-fpm || true # Adjust PHP version as needed (e.g., php7.4-fpm)
+           sudo systemctl restart nginx || true # Adjust web server name as needed (e.g., apache2)
+
+           echo "Deployment complete!"
           EOF
-      
