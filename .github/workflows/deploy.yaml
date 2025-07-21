@@ -64,6 +64,6 @@ jobs:
             sudo chown -R www-data:www-data .
             sudo chmod -R 777 storage 
 
-            echo "deplo complete"
+            echo "deploy complete"
           EOF
       
