@@ -1,0 +1,55 @@
+name: deploy 
+
+on:
+  push:
+    branches:
+      - main 
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+
+    steps: 
+      - name: checkout code
+        uses: actions/checkout@v4
+        
+
+      - name: set up SSH key
+        run: |
+          echo "${{ secrets.LARRAVEL_KEY }}" > ssh_key.pem
+          chmod 400 ssh_key.pem
+
+      - name: deploy to ec2
+        env:
+          LARAVEL_ENV: ${{secrets.LARRAVEL_ENV}}
+        run: |
+          ssh -o StrictHostChecking=no -i ssh_key.pem ubuntu@3.110.136.243 << 'EOF'
+           set -e 
+
+           cd /var/www/html/laravel
+
+           echo "fixing ownership"
+           sudo chown -R ubuntu:ubuntu .
+
+           echo "pull latest code"
+           git pull origin main
+
+           echo "writing  .env from secret .."
+           cat > .env <<EOL
+          $LARAVEL_ENV
+          EOL 
+
+            echo "generating laravel app_key"
+            php artisan key:generate
+          
+            echo "installing dependencies"
+            composer install --no-interaction --prefer-dist --optimize-autoloader
+          
+            echo "setting correct laravel permission"
+            sudo chown -R www-data:www-data .
+            sudo chmod -R 777 storage 
+
+            echo "deplo complete"
+          EOF
+      
