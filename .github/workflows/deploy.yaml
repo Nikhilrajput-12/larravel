@@ -52,11 +52,13 @@ jobs:
             echo "writing .env from secret"
             printf "%s\n" "$LARRAVEL_ENV" > .env
 
-            echo "generating laravel app_key"
-            php artisan key:generate
+            
           
             echo "installing dependencies"
             composer install --no-interaction --prefer-dist --optimize-autoloader
+
+            echo "generating laravel app_key"
+            php artisan key:generate
           
             echo "setting correct laravel permission"
             sudo chown -R www-data:www-data .
